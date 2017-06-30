@@ -3,7 +3,7 @@ import sys, os
 from operator import itemgetter
 
 """
-Merge outfiles from grid jobs into one final histogram, including proper event and sample weighting
+Merge outfiles from grid jobs into one final histogram, including proper event and sample (TODO) weighting
 """
 
 def iter_outfiles(dirname):
