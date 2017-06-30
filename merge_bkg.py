@@ -31,6 +31,7 @@ def main():
     mjj = TH1D("dijetmass", "Dijet Mass", 100, 0, 10000)
     jetm = TH3D("jetmass", "Jet Masses", 50, 0, 500, 50, 0, 500, 100, 0, 10000)
 
+    # TODO: store/pull kfactor, xsec, filtering eff
     for i, f in enumerate(iter_outfiles(sys.argv[1])):
         tree = f.Get("aTree")
         for evt in tree:
