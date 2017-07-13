@@ -1,6 +1,12 @@
+import sys
+import os
+import argparse
+
+from operator import itemgetter
+
 from ROOT import TH3D, TH2D, TH1D, TFile, TLorentzVector
-import sys, os, argparse
-from operator import itemgetter, mul
+
+from histoparams import *
 
 """
 Merge outfiles from grid jobs into one final histogram, including proper event and sample weighting
@@ -15,6 +21,7 @@ def iter_outfiles(dirname):
             yield f
             f.Close()
 
+
 def masses(evt):
     sort_order = [i[0] for i in sorted(enumerate(evt.JetPt), key=itemgetter(1))]
     i, j = sort_order[-1], sort_order[-2]
@@ -25,6 +32,7 @@ def masses(evt):
     subl_vector = TLorentzVector()
     subl_vector.SetPtEtaPhiM(evt.JetPt[j], evt.JetEta[j], evt.JetPhi[j], evt.JetM[j])
     return evt.JetM[i], evt.JetM[j], (lead_vector + subl_vector).Mag(), evt.JetPt[i], evt.JetPt[j]
+
 
 def main(args):
     lumi = 40e6 # 6 orders of magnitude between femto- and nano-
@@ -37,20 +45,22 @@ def main(args):
         3: 26454 * 3.1956e-4 * 1 / 7349799 * lumi,
     }
 
-    binsize = 15 # for dijet mass
-    dijetmassrange = 4000
-
-    m1 = TH1D("jet1m", "Leading Jet Mass", 100, 0, 200)
-    m2 = TH1D("jet2m", "Subleading Jet Mass", 100, 0, 200)
-    mjj = TH1D("dijetmass", "Dijet Mass", dijetmassrange/binsize, 0, dijetmassrange)
-    jetm = TH3D("jetmass", "Jet Masses", 100, 0, 200, 100, 0, 200, dijetmassrange/binsize, 0, dijetmassrange)
+    m1 = TH1D("jet1m", "Leading Jet Mass", mj_max/mj_binsize, 0, mj_max)
+    m2 = TH1D("jet2m", "Subleading Jet Mass", mj_max/mj_binsize, 0, mj_max)
+    mjj = TH1D("dijetmass", "Dijet Mass", mjj_max/mjj_binsize, 0, mjj_max)
+    jetm = TH3D("jetmass", "Jet Masses",
+                mj_max/mj_binsize, 0, mj_max,
+                mj_max/mj_binsize, 0, mj_max,
+                mjj_max/mjj_binsize, 0, mjj_max)
     pt1 = TH1D("jet1pt", "Leading Jet pT", 50, 0, 1500)
     pt2 = TH1D("jet2pt", "Subleading Jet pT", 50, 0, 1500)
 
     # histograms for events where m1 ~ m2
-    m_avg = TH1D("jetm_avg", "Avg jetmass where m1 ~ m2", 100, 0, 200)
-    mjj_avg = TH1D("mjj_avg", "Dijet mass where m1 ~ m2", dijetmassrange/binsize, 0, dijetmassrange)
-    jetm_avg = TH2D("jetmass_avg", "Jet masses where m1 ~ m2", 100, 0, 200, dijetmassrange/binsize, 0, dijetmassrange)
+    m_avg = TH1D("jetm_avg", "Avg jetmass where m1 ~ m2", mj_max/mj_binsize, 0, mj_max)
+    mjj_avg = TH1D("mjj_avg", "Dijet mass where m1 ~ m2", mjj_max/mjj_binsize, 0, mjj_max)
+    jetm_avg = TH2D("jetmass_avg", "Jet masses where m1 ~ m2",
+                    mj_max/mj_binsize, 0, mj_max,
+                    mjj_max/mjj_binsize, 0, mjj_max)
 
     for sample, sample_norm in normalization.iteritems():
         directory = "data/user.vbaratha.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ%sW.%s_JZ%s_histOutput.root" % (sample, args.jobname, sample)
