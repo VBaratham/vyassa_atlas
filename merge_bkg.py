@@ -4,7 +4,7 @@ import argparse
 
 from operator import itemgetter
 
-from ROOT import TH3D, TH2D, TH1D, TFile, TLorentzVector
+from ROOT import TH3F, TH2F, TH1D, TFile, TLorentzVector
 
 from histoparams import *
 
@@ -48,7 +48,7 @@ def main(args):
     m1 = TH1D("jet1m", "Leading Jet Mass", mj_max/mj_binsize, 0, mj_max)
     m2 = TH1D("jet2m", "Subleading Jet Mass", mj_max/mj_binsize, 0, mj_max)
     mjj = TH1D("dijetmass", "Dijet Mass", mjj_max/mjj_binsize, 0, mjj_max)
-    jetm = TH3D("jetmass", "Jet Masses",
+    jetm = TH3F("jetmass", "Jet Masses",
                 mj_max/mj_binsize, 0, mj_max,
                 mj_max/mj_binsize, 0, mj_max,
                 mjj_max/mjj_binsize, 0, mjj_max)
@@ -58,7 +58,7 @@ def main(args):
     # histograms for events where m1 ~ m2
     m_avg = TH1D("jetm_avg", "Avg jetmass where m1 ~ m2", mj_max/mj_binsize, 0, mj_max)
     mjj_avg = TH1D("mjj_avg", "Dijet mass where m1 ~ m2", mjj_max/mjj_binsize, 0, mjj_max)
-    jetm_avg = TH2D("jetmass_avg", "Jet masses where m1 ~ m2",
+    jetm_avg = TH2F("jetmass_avg", "Jet masses where m1 ~ m2",
                     mj_max/mj_binsize, 0, mj_max,
                     mjj_max/mjj_binsize, 0, mjj_max)
 
