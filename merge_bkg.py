@@ -35,9 +35,9 @@ def masses(evt):
 
 
 def main(args):
-    lumi = 40e6 # 6 orders of magnitude between femto- and nano-
+    lumi = 40e6 # = 40 fb^-1 (there are 6 orders of magnitude between femto- and nano-)
     normalization = {
-        # i: xsec (nb) * filt_eff * kfactor / nevents * lumi
+        # i: xsec (nb) * filt_eff * kfactor / nevents * lumi (nb^-1)
         7: .016215 * 3.9216e-4 * 1 / 1770193 * lumi,
         6: .25753 * 9.4106e-4 * 1 / 1893389 * lumi,
         5: 4.5535 * 9.2196e-4 * 1 / 7977567 * lumi,

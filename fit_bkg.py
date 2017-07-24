@@ -9,6 +9,44 @@ from histoparams import *
 Playing around with fitting to the merged bkg file
 """
 
+def get_fit_fcn_1():
+    fit_fcn = TF2(
+        "mjj_avg_fcn", "[0]*(1-x/13000)^[1]*(x/13000)^([2] + [3]*log(x/13000))*" + 
+        "(1-y/13000)^[4]*(y/13000)^([5] + [6]*log(y/13000))",
+        *(mj_fit_range+mjj_fit_range)
+    )
+    fit_fcn.SetParameter(0, 5000)
+    fit_fcn.SetParameter(1, 15)
+    fit_fcn.SetParameter(2, -4)
+    fit_fcn.SetParameter(3, -1)
+    fit_fcn.SetParameter(4, 15)
+    fit_fcn.SetParameter(5, -4)
+    fit_fcn.SetParameter(6, -1)
+
+    return fit_fcn
+
+def get_fit_fcn_2():
+    fit_fcn = TF2(
+        "mjj_avg_fcn", "[0]*(1-y/13000)^([1]*(x/13000) + [2])*(y/13000)^([3]*(x/13000) + [4] + ([5]*(x/13000) + [6])*log(y/13000))",
+        *(mj_fit_range+mjj_fit_range)
+    )
+    fit_fcn.SetParameter(0, 5000)
+
+    # This was param [1]
+    fit_fcn.SetParameter(1, 3000)
+    fit_fcn.SetParameter(2, 6)
+
+    # This was param [2]
+    fit_fcn.SetParameter(3, -350)
+    fit_fcn.SetParameter(4, -2.5)
+
+    # This was param [3]
+    fit_fcn.SetParameter(5, -250)
+    fit_fcn.SetParameter(6, 1)
+
+    return fit_fcn
+
+
 def main():
     f = TFile(sys.argv[1])
 
@@ -38,40 +76,9 @@ def main():
                             mjj_fit_range[0]/mjj_binsize, mjj_fit_range[1]/mjj_binsize + 1,
                             "jetmass_cut", "Jet masses after cut")
 
-    # fit_fcn = TF2(
-    #     "mjj_avg_fcn", "[0]*(1-x/13000)^[1]*(x/13000)^([2] + [3]*log(x/13000))*" + 
-    #     "(1-y/13000)^[4]*(y/13000)^([5] + [6]*log(y/13000))",
-    #     *(mj_fit_range+mjj_fit_range)
-    # )
-    # fit_fcn.SetNpx(jetmass_cut.GetNbinsX())
-    # fit_fcn.SetNpy(jetmass_cut.GetNbinsY())
-    # fit_fcn.SetParameter(0, 5000)
-    # fit_fcn.SetParameter(1, 15)
-    # fit_fcn.SetParameter(2, -4)
-    # fit_fcn.SetParameter(3, -1)
-    # fit_fcn.SetParameter(4, 15)
-    # fit_fcn.SetParameter(5, -4)
-    # fit_fcn.SetParameter(6, -1)
-
-    fit_fcn = TF2(
-        "mjj_avg_fcn", "[0]*(1-y/13000)^([1]*(x/13000) + [2])*(y/13000)^([3]*(x/13000) + [4] + ([5]*(x/13000) + [6])*log(y/13000))",
-        *(mj_fit_range+mjj_fit_range)
-    )
+    fit_fcn = get_fit_fcn_1()
     fit_fcn.SetNpx(jetmass_cut.GetNbinsX())
     fit_fcn.SetNpy(jetmass_cut.GetNbinsY())
-    fit_fcn.SetParameter(0, 5000)
-
-    # This was param [1]
-    fit_fcn.SetParameter(1, 3000)
-    fit_fcn.SetParameter(2, 6)
-
-    # This was param [2]
-    fit_fcn.SetParameter(3, -350)
-    fit_fcn.SetParameter(4, -2.5)
-
-    # This was param [3]
-    fit_fcn.SetParameter(5, -250)
-    fit_fcn.SetParameter(6, 1)
 
     jetmass_cut.Fit(fit_fcn)
 
