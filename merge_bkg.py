@@ -4,7 +4,7 @@ import argparse
 
 from operator import itemgetter
 
-from ROOT import TH3F, TH2F, TH1D, TFile, TLorentzVector
+from ROOT import TH1, TH3F, TH2F, TH1D, TFile, TLorentzVector
 
 from histoparams import *
 
@@ -44,6 +44,8 @@ def main(args):
         4: 254.63 * 5.3015e-4 * 1 / 7975217 * lumi,
         3: 26454 * 3.1956e-4 * 1 / 7349799 * lumi,
     }
+
+    TH1.SetDefaultSumw2()
 
     m1 = TH1D("jet1m", "Leading Jet Mass", mj_max/mj_binsize, 0, mj_max)
     m2 = TH1D("jet2m", "Subleading Jet Mass", mj_max/mj_binsize, 0, mj_max)
