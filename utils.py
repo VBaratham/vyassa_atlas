@@ -3,6 +3,8 @@ from itertools import product
 
 from ROOT import TH1F, TH2F, TH3F
 
+from histoparams import *
+
 chisq_contrib = lambda obs, exp, err: (obs-exp)**2/err**2
 
 def chisq(h1, h2):
@@ -89,6 +91,15 @@ def cut_histo(histo, xmin, xmax, ymin, ymax, name, title):
 
     return new_histo
 
+def get_jetmass_cut(jetmass):
+    """
+    Cut the 2d jetmass histogram (symmetric events) down to the fit range specified in histoparams
+    """
+    return cut_histo(jetmass,
+                     mj_fit_range[0]/mj_binsize, mj_fit_range[1]/mj_binsize,
+                     mjj_fit_range[0]/mjj_binsize, mjj_fit_range[1]/mjj_binsize,
+                     "jetmass_cut", "Jet masses after cut")
+
 def slice_histo_y(histo, x, name, title):
     """
     Cut a 1d slice out of a TH2F along the y axis at the given x bin
@@ -113,6 +124,7 @@ def add_slice(histo, slice_histo, x):
     for y in range(histo.GetNbinsY()):
         histo.SetBinContent(x, y+1, histo.GetBinContent(x, y+1) + slice_histo.GetBinContent(y+1))
 
+        
 def slice_by_slice_fit(histo, fit_fcn_factory, name_fmt="slice_%s", title_fmt="M_jj, slice %s"):
     """
     Fit slice by slice (along y) and return the TF1 for each x bin and a histogram of the fit
@@ -126,12 +138,9 @@ def slice_by_slice_fit(histo, fit_fcn_factory, name_fmt="slice_%s", title_fmt="M
         sliced_histo = slice_histo_y(histo, x+1, name_fmt % (x+1), title_fmt % (x+1))
         fit_fcn = fit_fcn_factory(sliced_histo, x+1)
         fit_fcn.SetNpx(sliced_histo.GetNbinsX())
-        sliced_histo.Fit(fit_fcn)
+        sliced_histo.Fit(fit_fcn, 'q')
         fcns.append(fit_fcn)
         add_slice(fit_histo, fit_fcn.GetHistogram(), x+1)
 
-        
     return fcns, fit_histo
 
-        
-        

@@ -101,8 +101,8 @@ def main():
                             "jetmass_cut", "Jet masses after cut")
 
     fit_fcn = get_fit_fcn_1b()
-    fit_fcn.SetNpx(jetmass_cut.GetNbinsX())
-    fit_fcn.SetNpy(jetmass_cut.GetNbinsY())
+    # fit_fcn.SetNpx(jetmass_cut.GetNbinsX())
+    # fit_fcn.SetNpy(jetmass_cut.GetNbinsY())
 
     jetmass_cut.Fit(fit_fcn, 'q')
 

@@ -4,7 +4,7 @@ import argparse
 
 from operator import itemgetter
 
-from ROOT import TH1, TH3F, TH2F, TH1D, TFile, TLorentzVector
+from ROOT import TH1, TH3F, TH2F, TH1F, TFile, TLorentzVector
 
 from histoparams import *
 
@@ -22,16 +22,30 @@ def iter_outfiles(dirname):
             f.Close()
 
 
-def masses(evt):
+def leading_subleading(evt):
+    """
+    Return the indices of the leading and subleading jets in the event. Raise ValueError
+    if evt contains <2 jets
+    """
     sort_order = [i[0] for i in sorted(enumerate(evt.JetPt), key=itemgetter(1))]
     i, j = sort_order[-1], sort_order[-2]
     while evt.JetM[i] == evt.JetM[j]:
         j -= 1
+    if j < 0:
+        raise ValueError("Event contains <2 jets")
+    return i, j
+    
+
+def masses(evt, i, j):
+    """
+    Return the i'th jet mass, the j'th jet mass, and their invariant mass
+    """
+    i, j = leading_subleading(evt)
     lead_vector = TLorentzVector()
     lead_vector.SetPtEtaPhiM(evt.JetPt[i], evt.JetEta[i], evt.JetPhi[i], evt.JetM[i])
     subl_vector = TLorentzVector()
     subl_vector.SetPtEtaPhiM(evt.JetPt[j], evt.JetEta[j], evt.JetPhi[j], evt.JetM[j])
-    return evt.JetM[i], evt.JetM[j], (lead_vector + subl_vector).Mag(), evt.JetPt[i], evt.JetPt[j]
+    return evt.JetM[i], evt.JetM[j], (lead_vector + subl_vector).Mag()
 
 
 def main(args):
@@ -47,22 +61,61 @@ def main(args):
 
     TH1.SetDefaultSumw2()
 
-    m1 = TH1D("jet1m", "Leading Jet Mass", mj_max/mj_binsize, 0, mj_max)
-    m2 = TH1D("jet2m", "Subleading Jet Mass", mj_max/mj_binsize, 0, mj_max)
-    mjj = TH1D("dijetmass", "Dijet Mass", mjj_max/mjj_binsize, 0, mjj_max)
+    # "Regular" histograms
+    m1 = TH1F("jet1m", "Leading Jet Mass", mj_max/mj_binsize, 0, mj_max)
+    m2 = TH1F("jet2m", "Subleading Jet Mass", mj_max/mj_binsize, 0, mj_max)
+    mjj = TH1F("dijetmass", "Dijet Mass", mjj_max/mjj_binsize, 0, mjj_max)
     jetm = TH3F("jetmass", "Jet Masses",
                 mj_max/mj_binsize, 0, mj_max,
                 mj_max/mj_binsize, 0, mj_max,
                 mjj_max/mjj_binsize, 0, mjj_max)
-    pt1 = TH1D("jet1pt", "Leading Jet pT", 50, 0, 1500)
-    pt2 = TH1D("jet2pt", "Subleading Jet pT", 50, 0, 1500)
+    pt1 = TH1F("jet1pt", "Leading Jet pT", 50, 0, 1500)
+    pt2 = TH1F("jet2pt", "Subleading Jet pT", 50, 0, 1500)
 
     # histograms for events where m1 ~ m2
-    m_avg = TH1D("jetm_avg", "Avg jetmass where m1 ~ m2", mj_max/mj_binsize, 0, mj_max)
-    mjj_avg = TH1D("mjj_avg", "Dijet mass where m1 ~ m2", mjj_max/mjj_binsize, 0, mjj_max)
+    m_avg = TH1F("jetm_avg", "Avg jetmass where m1 ~ m2", mj_max/mj_binsize, 0, mj_max)
+    mjj_avg = TH1F("mjj_avg", "Dijet mass where m1 ~ m2", mjj_max/mjj_binsize, 0, mjj_max)
     jetm_avg = TH2F("jetmass_avg", "Jet masses where m1 ~ m2",
                     mj_max/mj_binsize, 0, mj_max,
                     mjj_max/mjj_binsize, 0, mjj_max)
+
+    # histograms separated by qq/qg/gg events. Index is number of gluons (0, 1, or 2)
+    separated_jetm = {
+        0: TH2F("jetm_qq", "Avg jet mass (m1 ~ m2) for qq events",
+                mj_max/mj_binsize, 0, mj_max,
+                mjj_max/mjj_binsize, 0, mjj_max),
+        1: TH2F("jetm_qg", "Avg jet mass (m1 ~ m2) for qg events",
+                mj_max/mj_binsize, 0, mj_max,
+                mjj_max/mjj_binsize, 0, mjj_max),
+        2: TH2F("jetm_gg", "Avg jet mass (m1 ~ m2) for gg events",
+                mj_max/mj_binsize, 0, mj_max,
+                mjj_max/mjj_binsize, 0, mjj_max),
+    }
+    separated_mjj = {
+        0: TH1F("mjj_qq", "Dijet mass for qq events", mjj_max/mjj_binsize, 0, mjj_max),
+        1: TH1F("mjj_qg", "Dijet mass for qg events", mjj_max/mjj_binsize, 0, mjj_max),
+        2: TH1F("mjj_gg", "Dijet mass for gg events", mjj_max/mjj_binsize, 0, mjj_max),
+    }
+    separated_m1 = {
+        0: TH1F("jet1m_qq", "Leading jet mass for qq events", mj_max/mj_binsize, 0, mj_max),
+        1: TH1F("jet1m_qg", "Leading jet mass for qg events", mj_max/mj_binsize, 0, mj_max),
+        2: TH1F("jet1m_gg", "Leading jet mass for gg events", mj_max/mj_binsize, 0, mj_max),
+    }
+    separated_m2 = {
+        0: TH1F("jet2m_qq", "Subleading jet mass for qq events", mj_max/mj_binsize, 0, mj_max),
+        1: TH1F("jet2m_qg", "Subleading jet mass for qg events", mj_max/mj_binsize, 0, mj_max),
+        2: TH1F("jet2m_gg", "Subleading jet mass for gg events", mj_max/mj_binsize, 0, mj_max),
+    }
+    separated_pt1 = {
+        0: TH1F("jet1pt_qq", "Leading jet pT for qq events", 50, 0, 1500),
+        1: TH1F("jet1pt_qg", "Leading jet pT for qg events", 50, 0, 1500),
+        2: TH1F("jet1pt_gg", "Leading jet pT for gg events", 50, 0, 1500),
+    }
+    separated_pt2 = {
+        0: TH1F("jet2pt_qq", "Subleading jet pT for qq events", 50, 0, 1500),
+        1: TH1F("jet2pt_qg", "Subleading jet pT for qg events", 50, 0, 1500),
+        2: TH1F("jet2pt_gg", "Subleading jet pT for gg events", 50, 0, 1500),
+    }
 
     for sample, sample_norm in normalization.iteritems():
         directory = "data/user.vbaratha.Pythia8EvtGen_A14NNPDF23LO_jetjet_JZ%sW.%s_JZ%s_histOutput.root" % (sample, args.jobname, sample)
@@ -72,19 +125,34 @@ def main(args):
             tree = f.Get("aTree")
             for evt in tree:
                 try:
-                    _m1, _m2, _mjj, p1, p2 = masses(evt)
+                    i, j = leading_subleading(evt)
+                    _m1, _m2, _mjj = masses(evt, i, j)
+                    p1, p2 = evt.JetPt[i], evt.JetPt[j]
                     wt = evt.weight * sample_norm
+
+                    # Fill "regular" histograms
                     m1.Fill(_m1, wt)
                     m2.Fill(_m2, wt)
                     mjj.Fill(_mjj, wt)
                     jetm.Fill(_m1, _m2, _mjj, wt)
                     pt1.Fill(p1, wt)
                     pt2.Fill(p2, wt)
+
+                    # Fill histograms separated by qq/qg/gg events
+                    num_gluons = sum(1 for pdgid in [evt.JetType[i], evt.JetType[j]] if pdgid == 21)
+                    separated_mjj[num_gluons].Fill(_mjj, wt)
+                    separated_m1[num_gluons].Fill(_m1, wt)
+                    separated_m2[num_gluons].Fill(_m2, wt)
+                    separated_pt1[num_gluons].Fill(p1, wt)
+                    separated_pt2[num_gluons].Fill(p2, wt)
+
+                    # Fill histograms for events where m_j1 ~ m_j2
                     if abs(_m1 - _m2) < MASS_DIFF_CUTOFF:
                         mavg = (_m1 + _m2) / 2
                         m_avg.Fill(mavg, wt)
                         mjj_avg.Fill(_mjj, wt)
                         jetm_avg.Fill(mavg, _mjj, wt)
+                        separated_jetm[num_gluons].Fill(mavg, _mjj, wt)
                 except IndexError:
                     pass
 
@@ -99,6 +167,13 @@ def main(args):
     m_avg.Write()
     mjj_avg.Write()
     jetm_avg.Write()
+    for i in range(3):
+        separated_jetm[i].Write()
+        separated_mjj[i].Write()
+        separated_m1[i].Write()
+        separated_m2[i].Write()
+        separated_pt1[i].Write()
+        separated_pt2[i].Write()
 
     f.Close()
     
